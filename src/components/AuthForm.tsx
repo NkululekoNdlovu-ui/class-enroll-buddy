@@ -8,7 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GraduationCap, BookOpen, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export default function AuthForm() {
+interface Props {
+  onLogin: (student: any) => void;
+}
+
+export default function AuthForm({ onLogin }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -37,6 +41,17 @@ export default function AuthForm() {
         title: "Login Successful!",
         description: `Welcome back, ${loginForm.email}!`,
       });
+      
+      // Mock student data for login
+      const mockStudent = {
+        name: "John",
+        surname: "Doe",
+        email: loginForm.email,
+        course: "Computer Science",
+        yearLevel: "3rd Year",
+      };
+      
+      onLogin(mockStudent);
     }, 1500);
   };
 
@@ -51,6 +66,8 @@ export default function AuthForm() {
         title: "Registration Successful!",
         description: `Welcome to Student Tracker, ${signupForm.name}!`,
       });
+      
+      onLogin(signupForm);
     }, 1500);
   };
 
