@@ -73,6 +73,7 @@ export default function HomePage({ student, onLogout }: Props) {
     description: ''
   });
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentView, setCurrentView] = useState<'subjects' | 'reminders'>('subjects');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -285,285 +286,315 @@ export default function HomePage({ student, onLogout }: Props) {
           </CardContent>
         </Card>
 
-        {/* Reminders Section */}
+        {/* Navigation Buttons */}
         <Card className="mb-8 shadow-card border-0 bg-card/80 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Upcoming Reminders
-              </CardTitle>
-              <Dialog open={isAddingReminder} onOpenChange={setIsAddingReminder}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-primary hover:opacity-90 transition-smooth">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Reminder
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Reminder</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="reminder-subject">Subject</Label>
-                      <select
-                        id="reminder-subject"
-                        value={newReminder.subjectId}
-                        onChange={(e) => setNewReminder({ ...newReminder, subjectId: e.target.value })}
-                        className="w-full mt-1 p-2 border rounded-md bg-background"
-                      >
-                        <option value="">Select a subject</option>
-                        {subjects.map(subject => (
-                          <option key={subject.id} value={subject.id}>{subject.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="reminder-type">Type</Label>
-                      <select
-                        id="reminder-type"
-                        value={newReminder.type}
-                        onChange={(e) => setNewReminder({ ...newReminder, type: e.target.value as 'assignment' | 'submission' | 'exam' })}
-                        className="w-full mt-1 p-2 border rounded-md bg-background"
-                      >
-                        <option value="assignment">Assignment</option>
-                        <option value="submission">Submission</option>
-                        <option value="exam">Exam</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="reminder-title">Title</Label>
-                      <Input
-                        id="reminder-title"
-                        value={newReminder.title}
-                        onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
-                        placeholder="e.g., Math Assignment 1"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="reminder-date">Due Date & Time</Label>
-                      <Input
-                        id="reminder-date"
-                        type="datetime-local"
-                        value={newReminder.dueDate}
-                        onChange={(e) => setNewReminder({ ...newReminder, dueDate: e.target.value })}
-                        className="mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="reminder-description">Description (Optional)</Label>
-                      <Textarea
-                        id="reminder-description"
-                        value={newReminder.description}
-                        onChange={(e) => setNewReminder({ ...newReminder, description: e.target.value })}
-                        placeholder="Additional details about the reminder"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={addReminder} className="flex-1 bg-gradient-primary hover:opacity-90">
-                        Add Reminder
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsAddingReminder(false)} className="flex-1">
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+          <CardContent className="pt-6">
+            <div className="flex gap-4 justify-center">
+              <Button
+                onClick={() => setCurrentView('subjects')}
+                variant={currentView === 'subjects' ? 'default' : 'outline'}
+                className={`flex items-center gap-2 ${
+                  currentView === 'subjects' 
+                    ? 'bg-gradient-primary hover:opacity-90' 
+                    : 'hover:bg-primary/10'
+                }`}
+              >
+                <Calculator className="h-4 w-4" />
+                Subject Calculations
+              </Button>
+              <Button
+                onClick={() => setCurrentView('reminders')}
+                variant={currentView === 'reminders' ? 'default' : 'outline'}
+                className={`flex items-center gap-2 ${
+                  currentView === 'reminders' 
+                    ? 'bg-gradient-primary hover:opacity-90' 
+                    : 'hover:bg-primary/10'
+                }`}
+              >
+                <Clock className="h-4 w-4" />
+                Reminders
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            {getAllReminders().length === 0 ? (
-              <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No reminders set. Click "Add Reminder" to get started!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {getAllReminders().slice(0, 5).map((reminder) => {
-                  const countdown = getCountdown(reminder.dueDate);
-                  return (
-                    <div key={reminder.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          {reminder.type === 'assignment' && <BookOpen className="h-4 w-4 text-primary" />}
-                          {reminder.type === 'submission' && <Calendar className="h-4 w-4 text-primary" />}
-                          {reminder.type === 'exam' && <AlertCircle className="h-4 w-4 text-primary" />}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold">{reminder.title}</h4>
-                          <p className="text-sm text-muted-foreground">{reminder.subjectName} • {reminder.type}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Due: {new Date(reminder.dueDate).toLocaleDateString()} at {new Date(reminder.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        {countdown.overdue ? (
-                          <Badge variant="destructive">Overdue</Badge>
-                        ) : (
-                          <div className="text-sm">
-                            <div className="font-semibold text-primary">
-                              {countdown.days}d {countdown.hours}h {countdown.minutes}m
-                            </div>
-                            <div className="text-xs text-muted-foreground">remaining</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {getAllReminders().length > 5 && (
-                  <p className="text-center text-sm text-muted-foreground">
-                    And {getAllReminders().length - 5} more reminders...
-                  </p>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
 
-        {/* Subjects Section */}
-        <Card className="shadow-card border-0 bg-card/80 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                My Subjects ({subjects.length}/10)
-              </CardTitle>
-              <Dialog open={isAddingSubject} onOpenChange={setIsAddingSubject}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-gradient-primary hover:opacity-90 transition-smooth"
-                    disabled={subjects.length >= 10}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Subject
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Subject</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="subject-name">Subject Name</Label>
-                      <Input
-                        id="subject-name"
-                        value={newSubject.name}
-                        onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
-                        placeholder="e.g., Mathematics"
-                        className="mt-1"
-                      />
+        {/* Conditional Content Based on Current View */}
+        {currentView === 'reminders' && (
+          <Card className="shadow-card border-0 bg-card/80 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  Upcoming Reminders
+                </CardTitle>
+                <Dialog open={isAddingReminder} onOpenChange={setIsAddingReminder}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-gradient-primary hover:opacity-90 transition-smooth">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Reminder
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Reminder</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="reminder-subject">Subject</Label>
+                        <select
+                          id="reminder-subject"
+                          value={newReminder.subjectId}
+                          onChange={(e) => setNewReminder({ ...newReminder, subjectId: e.target.value })}
+                          className="w-full mt-1 p-2 border rounded-md bg-background"
+                        >
+                          <option value="">Select a subject</option>
+                          {subjects.map(subject => (
+                            <option key={subject.id} value={subject.id}>{subject.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <Label htmlFor="reminder-type">Type</Label>
+                        <select
+                          id="reminder-type"
+                          value={newReminder.type}
+                          onChange={(e) => setNewReminder({ ...newReminder, type: e.target.value as 'assignment' | 'submission' | 'exam' })}
+                          className="w-full mt-1 p-2 border rounded-md bg-background"
+                        >
+                          <option value="assignment">Assignment</option>
+                          <option value="submission">Submission</option>
+                          <option value="exam">Exam</option>
+                        </select>
+                      </div>
+                      <div>
+                        <Label htmlFor="reminder-title">Title</Label>
+                        <Input
+                          id="reminder-title"
+                          value={newReminder.title}
+                          onChange={(e) => setNewReminder({ ...newReminder, title: e.target.value })}
+                          placeholder="e.g., Math Assignment 1"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="reminder-date">Due Date & Time</Label>
+                        <Input
+                          id="reminder-date"
+                          type="datetime-local"
+                          value={newReminder.dueDate}
+                          onChange={(e) => setNewReminder({ ...newReminder, dueDate: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="reminder-description">Description (Optional)</Label>
+                        <Textarea
+                          id="reminder-description"
+                          value={newReminder.description}
+                          onChange={(e) => setNewReminder({ ...newReminder, description: e.target.value })}
+                          placeholder="Additional details about the reminder"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={addReminder} className="flex-1 bg-gradient-primary hover:opacity-90">
+                          Add Reminder
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsAddingReminder(false)} className="flex-1">
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="subject-description">Description</Label>
-                      <Textarea
-                        id="subject-description"
-                        value={newSubject.description}
-                        onChange={(e) => setNewSubject({ ...newSubject, description: e.target.value })}
-                        placeholder="Brief description of the subject"
-                        className="mt-1"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={addSubject} className="flex-1 bg-gradient-primary hover:opacity-90">
-                        Add Subject
-                      </Button>
-                      <Button variant="outline" onClick={() => setIsAddingSubject(false)} className="flex-1">
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {subjects.length === 0 ? (
-              <div className="text-center py-8">
-                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No subjects added yet. Click "Add Subject" to get started!</p>
+                  </DialogContent>
+                </Dialog>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Subject ID</TableHead>
-                      <TableHead>Subject Name</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="text-center">Term 1 %</TableHead>
-                      <TableHead className="text-center">Term 2 %</TableHead>
-                      <TableHead className="text-center">Term 3 %</TableHead>
-                      <TableHead className="text-center">Term 4 %</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {subjects.map((subject) => (
-                      <TableRow key={subject.id}>
-                        <TableCell className="font-mono text-sm">{subject.id}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="link"
-                            className="p-0 h-auto font-semibold text-primary hover:text-primary/80"
-                            onClick={() => openTermModal(subject, 'term1')}
-                          >
-                            {subject.name}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{subject.description}</TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openTermModal(subject, 'term1')}
-                            className="hover:bg-primary/10"
-                          >
-                            {subject.term1.toFixed(1)}%
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openTermModal(subject, 'term2')}
-                            className="hover:bg-primary/10"
-                          >
-                            {subject.term2.toFixed(1)}%
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openTermModal(subject, 'term3')}
-                            className="hover:bg-primary/10"
-                          >
-                            {subject.term3.toFixed(1)}%
-                          </Button>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openTermModal(subject, 'term4')}
-                            className="hover:bg-primary/10"
-                          >
-                            {subject.term4.toFixed(1)}%
-                          </Button>
-                        </TableCell>
+            </CardHeader>
+            <CardContent>
+              {getAllReminders().length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No reminders set. Click "Add Reminder" to get started!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {getAllReminders().map((reminder) => {
+                    const countdown = getCountdown(reminder.dueDate);
+                    return (
+                      <div key={reminder.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            {reminder.type === 'assignment' && <BookOpen className="h-4 w-4 text-primary" />}
+                            {reminder.type === 'submission' && <Calendar className="h-4 w-4 text-primary" />}
+                            {reminder.type === 'exam' && <AlertCircle className="h-4 w-4 text-primary" />}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold">{reminder.title}</h4>
+                            <p className="text-sm text-muted-foreground">{reminder.subjectName} • {reminder.type}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Due: {new Date(reminder.dueDate).toLocaleDateString()} at {new Date(reminder.dueDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {countdown.overdue ? (
+                            <Badge variant="destructive">Overdue</Badge>
+                          ) : (
+                            <div className="text-sm">
+                              <div className="font-semibold text-primary">
+                                {countdown.days}d {countdown.hours}h {countdown.minutes}m
+                              </div>
+                              <div className="text-xs text-muted-foreground">remaining</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {currentView === 'subjects' && (
+          <Card className="shadow-card border-0 bg-card/80 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  My Subjects ({subjects.length}/10)
+                </CardTitle>
+                <Dialog open={isAddingSubject} onOpenChange={setIsAddingSubject}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="bg-gradient-primary hover:opacity-90 transition-smooth"
+                      disabled={subjects.length >= 10}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Subject
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Subject</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="subject-name">Subject Name</Label>
+                        <Input
+                          id="subject-name"
+                          value={newSubject.name}
+                          onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value })}
+                          placeholder="e.g., Mathematics"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="subject-description">Description</Label>
+                        <Textarea
+                          id="subject-description"
+                          value={newSubject.description}
+                          onChange={(e) => setNewSubject({ ...newSubject, description: e.target.value })}
+                          placeholder="Brief description of the subject"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={addSubject} className="flex-1 bg-gradient-primary hover:opacity-90">
+                          Add Subject
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsAddingSubject(false)} className="flex-1">
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {subjects.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No subjects added yet. Click "Add Subject" to get started!</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Subject ID</TableHead>
+                        <TableHead>Subject Name</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-center">Term 1 %</TableHead>
+                        <TableHead className="text-center">Term 2 %</TableHead>
+                        <TableHead className="text-center">Term 3 %</TableHead>
+                        <TableHead className="text-center">Term 4 %</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {subjects.map((subject) => (
+                        <TableRow key={subject.id}>
+                          <TableCell className="font-mono text-sm">{subject.id}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="link"
+                              className="p-0 h-auto font-semibold text-primary hover:text-primary/80"
+                              onClick={() => openTermModal(subject, 'term1')}
+                            >
+                              {subject.name}
+                            </Button>
+                          </TableCell>
+                          <TableCell className="max-w-xs truncate">{subject.description}</TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openTermModal(subject, 'term1')}
+                              className="hover:bg-primary/10"
+                            >
+                              {subject.term1.toFixed(1)}%
+                            </Button>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openTermModal(subject, 'term2')}
+                              className="hover:bg-primary/10"
+                            >
+                              {subject.term2.toFixed(1)}%
+                            </Button>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openTermModal(subject, 'term3')}
+                              className="hover:bg-primary/10"
+                            >
+                              {subject.term3.toFixed(1)}%
+                            </Button>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openTermModal(subject, 'term4')}
+                              className="hover:bg-primary/10"
+                            >
+                              {subject.term4.toFixed(1)}%
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Term Details Modal */}
