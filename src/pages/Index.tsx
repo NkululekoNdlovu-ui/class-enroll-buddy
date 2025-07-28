@@ -1,8 +1,12 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import AuthForm from "@/components/AuthForm";
-import HomePage from "@/components/HomePage";
+import Dashboard from "./Dashboard";
+import Subjects from "./Subjects";
+import Reminders from "./Reminders";
 
 const Index = () => {
+  const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [student, setStudent] = useState(null);
 
@@ -16,11 +20,19 @@ const Index = () => {
     setIsAuthenticated(false);
   };
 
-  if (isAuthenticated && student) {
-    return <HomePage student={student} onLogout={handleLogout} />;
+  if (!isAuthenticated || !student) {
+    return <AuthForm onLogin={handleLogin} />;
   }
 
-  return <AuthForm onLogin={handleLogin} />;
+  // Route to appropriate component based on current path
+  switch (location.pathname) {
+    case '/subjects':
+      return <Subjects student={student} onLogout={handleLogout} />;
+    case '/reminders':
+      return <Reminders student={student} onLogout={handleLogout} />;
+    default:
+      return <Dashboard student={student} onLogout={handleLogout} />;
+  }
 };
 
 export default Index;
