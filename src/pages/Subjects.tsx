@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, BookOpen, LogOut, ArrowLeft, Calculator, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Subject {
   id: string;
@@ -329,10 +330,24 @@ export default function Subjects({ student, onLogout }: Props) {
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
-                Calculate {selectedTerm?.toUpperCase()} - {selectedSubject?.name}
+                Calculate Term - {selectedSubject?.name}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="term-select">Select Term</Label>
+                <Select value={selectedTerm} onValueChange={(value) => setSelectedTerm(value as 'term1' | 'term2' | 'term3' | 'term4')}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select a term" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="term1">Term 1</SelectItem>
+                    <SelectItem value="term2">Term 2</SelectItem>
+                    <SelectItem value="term3">Term 3</SelectItem>
+                    <SelectItem value="term4">Term 4</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="test">Test Score (%)</Label>

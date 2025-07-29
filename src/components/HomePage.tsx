@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, User, BookOpen, LogOut, Calculator, Clock, Calendar, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Reminder {
   id: string;
@@ -603,10 +604,24 @@ export default function HomePage({ student, onLogout }: Props) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-primary" />
-              {selectedTerm?.toUpperCase()} Details - {selectedSubject?.name}
+              Calculate Term - {selectedSubject?.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="term-select">Select Term</Label>
+              <Select value={selectedTerm} onValueChange={(value) => setSelectedTerm(value as 'term1' | 'term2' | 'term3' | 'term4')}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select a term" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="term1">Term 1</SelectItem>
+                  <SelectItem value="term2">Term 2</SelectItem>
+                  <SelectItem value="term3">Term 3</SelectItem>
+                  <SelectItem value="term4">Term 4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="test-score">Test Score</Label>
