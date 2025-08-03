@@ -29,17 +29,14 @@ interface Props {
     yearLevel: string;
   };
   onLogout: () => void;
+  reminders: Reminder[];
+  setReminders: React.Dispatch<React.SetStateAction<Reminder[]>>;
+  subjects: { id: string; name: string; description: string; term1: number; term2: number; term3: number; term4: number; }[];
 }
 
-export default function Reminders({ student, onLogout }: Props) {
+export default function Reminders({ student, onLogout, reminders, setReminders, subjects }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [subjects] = useState([
-    { id: '1', name: 'Mathematics' },
-    { id: '2', name: 'Physics' },
-    { id: '3', name: 'Chemistry' },
-  ]); // Demo subjects - in real app, this would come from props or context
   const [isAddingReminder, setIsAddingReminder] = useState(false);
   const [newReminder, setNewReminder] = useState({
     subjectId: '',

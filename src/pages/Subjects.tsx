@@ -39,12 +39,13 @@ interface Props {
     yearLevel: string;
   };
   onLogout: () => void;
+  subjects: Subject[];
+  setSubjects: React.Dispatch<React.SetStateAction<Subject[]>>;
 }
 
-export default function Subjects({ student, onLogout }: Props) {
+export default function Subjects({ student, onLogout, subjects, setSubjects }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [termDetails, setTermDetails] = useState<TermDetail>({
     test: 0,
