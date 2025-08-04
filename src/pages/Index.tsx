@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from '@supabase/supabase-js';
-import Auth from "./Auth";
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import AuthForm from "@/components/AuthForm";
 import Dashboard from "./Dashboard";
 import Subjects from "./Subjects";
 import Reminders from "./Reminders";
@@ -29,107 +27,23 @@ interface Reminder {
 
 const Index = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [student, setStudent] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [student, setStudent] = useState(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer profile fetching with setTimeout to avoid callback issues
-        if (session?.user) {
-          setTimeout(() => {
-            fetchStudentProfile(session.user.id);
-          }, 0);
-        } else {
-          setStudent(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchStudentProfile(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchStudentProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching student profile:', error);
-        return;
-      }
-
-      if (data) {
-        setStudent(data);
-      } else {
-        // Create student profile if it doesn't exist
-        const userData = user?.user_metadata;
-        if (userData && userData.first_name) {
-          const { data: newStudent, error: insertError } = await supabase
-            .from('students')
-            .insert({
-              user_id: userId,
-              first_name: userData.first_name,
-              last_name: userData.last_name,
-              student_id: userData.student_id,
-              email: user?.email || '',
-            })
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error('Error creating student profile:', insertError);
-          } else {
-            setStudent(newStudent);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error in fetchStudentProfile:', error);
-    }
+  const handleLogin = (studentData: any) => {
+    setStudent(studentData);
+    setIsAuthenticated(true);
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+  const handleLogout = () => {
     setStudent(null);
-    navigate('/');
+    setIsAuthenticated(false);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (!session || !user) {
-    return <Auth />;
+  if (!isAuthenticated || !student) {
+    return <AuthForm onLogin={handleLogin} />;
   }
 
   // Route to appropriate component based on current path

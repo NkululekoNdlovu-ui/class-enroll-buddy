@@ -8,26 +8,17 @@ import { useNavigate } from "react-router-dom";
 
 interface Props {
   student: {
-    id: string;
-    first_name: string;
-    last_name: string;
+    name: string;
+    surname: string;
     email: string;
-    student_id: string;
-  } | null;
+    course: string;
+    yearLevel: string;
+  };
   onLogout: () => void;
 }
 
 export default function Dashboard({ student, onLogout }: Props) {
   const navigate = useNavigate();
-
-  // Handle case when student data is not yet loaded
-  if (!student) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -88,18 +79,22 @@ export default function Dashboard({ student, onLogout }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                <p className="text-lg font-semibold">{student.first_name} {student.last_name}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Student ID</Label>
-                <p className="text-lg">{student.student_id}</p>
+                <p className="text-lg font-semibold">{student.name} {student.surname}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Email</Label>
                 <p className="text-lg">{student.email}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Course</Label>
+                <p className="text-lg">{student.course}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Year Level</Label>
+                <Badge variant="secondary" className="text-sm">{student.yearLevel}</Badge>
               </div>
             </div>
           </CardContent>
