@@ -32,12 +32,12 @@ interface TermDetail {
 
 interface Props {
   student: {
-    name: string;
-    surname: string;
+    id: string;
+    first_name: string;
+    last_name: string;
     email: string;
-    course: string;
-    yearLevel: string;
-  };
+    student_id: string;
+  } | null;
   onLogout: () => void;
   subjects: Subject[];
   setSubjects: React.Dispatch<React.SetStateAction<Subject[]>>;
@@ -46,6 +46,15 @@ interface Props {
 export default function Subjects({ student, onLogout, subjects, setSubjects }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Handle case when student data is not yet loaded
+  if (!student) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [termDetails, setTermDetails] = useState<TermDetail>({
     test: 0,

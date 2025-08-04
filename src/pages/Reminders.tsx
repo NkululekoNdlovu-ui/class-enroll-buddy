@@ -22,12 +22,12 @@ interface Reminder {
 
 interface Props {
   student: {
-    name: string;
-    surname: string;
+    id: string;
+    first_name: string;
+    last_name: string;
     email: string;
-    course: string;
-    yearLevel: string;
-  };
+    student_id: string;
+  } | null;
   onLogout: () => void;
   reminders: Reminder[];
   setReminders: React.Dispatch<React.SetStateAction<Reminder[]>>;
@@ -37,6 +37,15 @@ interface Props {
 export default function Reminders({ student, onLogout, reminders, setReminders, subjects }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Handle case when student data is not yet loaded
+  if (!student) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
   const [isAddingReminder, setIsAddingReminder] = useState(false);
   const [newReminder, setNewReminder] = useState({
     subjectId: '',
