@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GraduationCap, BookOpen, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   onLogin: (student: any) => void;
@@ -34,41 +35,88 @@ export default function AuthForm({ onLogin }: Props) {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Query for existing student by email
+      const { data: students, error } = await supabase
+        .from('students')
+        .select('*')
+        .eq('email', loginForm.email)
+        .single();
+
+      if (error || !students) {
+        toast({
+          title: "Login Failed",
+          description: "Student not found. Please check your email or sign up first.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
       toast({
         title: "Login Successful!",
-        description: `Welcome back, ${loginForm.email}!`,
+        description: `Welcome back, ${students.first_name}!`,
       });
       
-      // Mock student data for login
-      const mockStudent = {
-        name: "John",
-        surname: "Doe",
-        email: loginForm.email,
-        course: "Computer Science",
-        yearLevel: "3rd Year",
+      // Convert database student to component format
+      const studentData = {
+        name: students.first_name,
+        surname: students.last_name,
+        email: students.email,
+        course: "Computer Science", // You might want to add course to the students table
+        yearLevel: "3rd Year", // You might want to add year_level to the students table
       };
       
-      onLogin(mockStudent);
-    }, 1500);
+      onLogin(studentData);
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: "An error occurred during login.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate signup process
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // Save student to database
+      const { data, error } = await supabase
+        .from('students')
+        .insert([
+          {
+            first_name: signupForm.name,
+            last_name: signupForm.surname,
+            email: signupForm.email,
+            student_id: `STU${Date.now()}`, // Generate a simple student ID
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Registration Successful!",
         description: `Welcome to Student Tracker, ${signupForm.name}!`,
       });
       
       onLogin(signupForm);
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "An error occurred during registration.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
