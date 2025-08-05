@@ -36,38 +36,45 @@ export default function AuthForm({ onLogin }: Props) {
     setIsLoading(true);
     
     try {
-      // Query for existing student by email
-      const { data: students, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('email', loginForm.email)
-        .single();
+      // Authenticate with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: loginForm.email,
+        password: loginForm.password,
+      });
 
-      if (error || !students) {
+      if (authError) {
         toast({
           title: "Login Failed",
-          description: "Student not found. Please check your email or sign up first.",
+          description: authError.message,
           variant: "destructive",
         });
-        setIsLoading(false);
         return;
       }
 
-      toast({
-        title: "Login Successful!",
-        description: `Welcome back, ${students.first_name}!`,
-      });
-      
-      // Convert database student to component format
-      const studentData = {
-        name: students.first_name,
-        surname: students.last_name,
-        email: students.email,
-        course: "Computer Science", // You might want to add course to the students table
-        yearLevel: "3rd Year", // You might want to add year_level to the students table
-      };
-      
-      onLogin(studentData);
+      if (authData.user) {
+        // Query for student profile
+        const { data: studentData, error: studentError } = await supabase
+          .from('students')
+          .select('*')
+          .eq('user_id', authData.user.id)
+          .single();
+
+        if (studentError || !studentData) {
+          toast({
+            title: "Login Failed",
+            description: "Student profile not found.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Login Successful!",
+          description: `Welcome back, ${studentData.first_name}!`,
+        });
+        
+        onLogin(studentData);
+      }
     } catch (error) {
       toast({
         title: "Login Failed",
@@ -84,30 +91,54 @@ export default function AuthForm({ onLogin }: Props) {
     setIsLoading(true);
     
     try {
-      // Save student to database
-      const { data, error } = await supabase
-        .from('students')
-        .insert([
-          {
-            first_name: signupForm.name,
-            last_name: signupForm.surname,
-            email: signupForm.email,
-            student_id: `STU${Date.now()}`, // Generate a simple student ID
-          }
-        ])
-        .select()
-        .single();
+      // Sign up the user first
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: signupForm.email,
+        password: signupForm.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
 
-      if (error) {
-        throw error;
+      if (authError) {
+        toast({
+          title: "Registration Failed",
+          description: authError.message,
+          variant: "destructive",
+        });
+        return;
       }
 
-      toast({
-        title: "Registration Successful!",
-        description: `Welcome to Student Tracker, ${signupForm.name}!`,
-      });
-      
-      onLogin(signupForm);
+      if (authData.user) {
+        // Create student record with user_id
+        const { data: studentData, error: studentError } = await supabase
+          .from('students')
+          .insert({
+            user_id: authData.user.id,
+            first_name: signupForm.name,
+            last_name: signupForm.surname,
+            student_id: `STU${Date.now()}`,
+            email: signupForm.email,
+          })
+          .select()
+          .single();
+
+        if (studentError) {
+          toast({
+            title: "Registration Failed",
+            description: "Failed to create student profile: " + studentError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Registration Successful!",
+          description: `Welcome to Student Tracker, ${signupForm.name}!`,
+        });
+        
+        onLogin(studentData);
+      }
     } catch (error: any) {
       toast({
         title: "Registration Failed",
