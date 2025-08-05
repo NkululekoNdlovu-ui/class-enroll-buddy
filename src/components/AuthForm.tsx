@@ -57,12 +57,21 @@ export default function AuthForm({ onLogin }: Props) {
           .from('students')
           .select('*')
           .eq('user_id', authData.user.id)
-          .single();
+          .maybeSingle();
 
-        if (studentError || !studentData) {
+        if (studentError) {
           toast({
             title: "Login Failed",
-            description: "Student profile not found.",
+            description: "Error retrieving student profile: " + studentError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!studentData) {
+          toast({
+            title: "Profile Not Found",
+            description: "No student profile found. Please contact support or try signing up again.",
             variant: "destructive",
           });
           return;
