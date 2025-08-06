@@ -36,11 +36,15 @@ export default function AuthForm({ onLogin }: Props) {
     setIsLoading(true);
     
     try {
+      console.log('Starting login process...');
+      
       // Authenticate with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
+
+      console.log('Auth login response:', { authData, authError });
 
       if (authError) {
         toast({
@@ -52,12 +56,16 @@ export default function AuthForm({ onLogin }: Props) {
       }
 
       if (authData.user) {
+        console.log('Querying student profile for user:', authData.user.id);
+        
         // Query for student profile
         const { data: studentData, error: studentError } = await supabase
           .from('students')
           .select('*')
           .eq('user_id', authData.user.id)
           .maybeSingle();
+
+        console.log('Student query response:', { studentData, studentError });
 
         if (studentError) {
           toast({
@@ -85,6 +93,7 @@ export default function AuthForm({ onLogin }: Props) {
         onLogin(studentData);
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Login Failed",
         description: "An error occurred during login.",
@@ -100,6 +109,8 @@ export default function AuthForm({ onLogin }: Props) {
     setIsLoading(true);
     
     try {
+      console.log('Starting signup process...');
+      
       // Sign up the user first
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: signupForm.email,
@@ -108,6 +119,8 @@ export default function AuthForm({ onLogin }: Props) {
           emailRedirectTo: `${window.location.origin}/`
         }
       });
+
+      console.log('Auth signup response:', { authData, authError });
 
       if (authError) {
         toast({
@@ -119,6 +132,17 @@ export default function AuthForm({ onLogin }: Props) {
       }
 
       if (authData.user) {
+        // Check if user needs email confirmation
+        if (!authData.session) {
+          toast({
+            title: "Check Your Email",
+            description: "Please check your email and click the confirmation link to complete registration.",
+          });
+          return;
+        }
+
+        console.log('Creating student record for user:', authData.user.id);
+        
         // Create student record with user_id
         const { data: studentData, error: studentError } = await supabase
           .from('students')
@@ -131,6 +155,8 @@ export default function AuthForm({ onLogin }: Props) {
           })
           .select()
           .single();
+
+        console.log('Student creation response:', { studentData, studentError });
 
         if (studentError) {
           toast({
@@ -149,6 +175,7 @@ export default function AuthForm({ onLogin }: Props) {
         onLogin(studentData);
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         title: "Registration Failed",
         description: error.message || "An error occurred during registration.",
