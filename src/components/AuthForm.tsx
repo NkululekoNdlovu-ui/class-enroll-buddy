@@ -152,6 +152,8 @@ export default function AuthForm({ onLogin }: Props) {
             last_name: signupForm.surname,
             student_id: `STU${Date.now()}`,
             email: signupForm.email,
+            course: signupForm.course,
+            year_level: signupForm.yearLevel,
           })
           .select()
           .single();

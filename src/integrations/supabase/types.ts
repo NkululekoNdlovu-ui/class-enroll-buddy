@@ -67,6 +67,7 @@ export type Database = {
       }
       students: {
         Row: {
+          course: string | null
           created_at: string
           email: string
           first_name: string
@@ -75,8 +76,10 @@ export type Database = {
           student_id: string
           updated_at: string
           user_id: string
+          year_level: string | null
         }
         Insert: {
+          course?: string | null
           created_at?: string
           email: string
           first_name: string
@@ -85,8 +88,10 @@ export type Database = {
           student_id: string
           updated_at?: string
           user_id: string
+          year_level?: string | null
         }
         Update: {
+          course?: string | null
           created_at?: string
           email?: string
           first_name?: string
@@ -95,6 +100,7 @@ export type Database = {
           student_id?: string
           updated_at?: string
           user_id?: string
+          year_level?: string | null
         }
         Relationships: []
       }

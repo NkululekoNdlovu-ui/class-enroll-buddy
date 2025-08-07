@@ -8,11 +8,11 @@ import { useNavigate } from "react-router-dom";
 
 interface Props {
   student: {
-    name: string;
-    surname: string;
+    first_name: string;
+    last_name: string;
     email: string;
     course: string;
-    yearLevel: string;
+    year_level: string;
   };
   onLogout: () => void;
 }
@@ -82,7 +82,7 @@ export default function Dashboard({ student, onLogout }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Full Name</Label>
-                <p className="text-lg font-semibold">{student.name} {student.surname}</p>
+                <p className="text-lg font-semibold">{student.first_name} {student.last_name}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Email</Label>
@@ -90,11 +90,11 @@ export default function Dashboard({ student, onLogout }: Props) {
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Course</Label>
-                <p className="text-lg">{student.course}</p>
+                <p className="text-lg">{student.course || 'Not specified'}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Year Level</Label>
-                <Badge variant="secondary" className="text-sm">{student.yearLevel}</Badge>
+                <Badge variant="secondary" className="text-sm">{student.year_level || 'Not specified'}</Badge>
               </div>
             </div>
           </CardContent>
