@@ -29,8 +29,6 @@ const Index = () => {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [student, setStudent] = useState(null);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [reminders, setReminders] = useState<Reminder[]>([]);
 
   const handleLogin = (studentData: any) => {
     setStudent(studentData);
@@ -53,8 +51,6 @@ const Index = () => {
         <Subjects 
           student={student} 
           onLogout={handleLogout} 
-          subjects={subjects}
-          setSubjects={setSubjects}
         />
       );
     case '/reminders':
@@ -62,9 +58,6 @@ const Index = () => {
         <Reminders 
           student={student} 
           onLogout={handleLogout} 
-          reminders={reminders}
-          setReminders={setReminders}
-          subjects={subjects}
         />
       );
     default:

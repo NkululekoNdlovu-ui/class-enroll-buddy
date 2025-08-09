@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Clock, LogOut, ArrowLeft, Calendar, AlertCircle, BookOpen, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Reminder {
   id: string;
@@ -22,21 +23,22 @@ interface Reminder {
 
 interface Props {
   student: {
-    name: string;
-    surname: string;
+    id: string;
+    first_name: string;
+    last_name: string;
     email: string;
     course: string;
-    yearLevel: string;
+    year_level: string;
   };
   onLogout: () => void;
-  reminders: Reminder[];
-  setReminders: React.Dispatch<React.SetStateAction<Reminder[]>>;
-  subjects: { id: string; name: string; description: string; term1: number; term2: number; term3: number; term4: number; }[];
 }
 
-export default function Reminders({ student, onLogout, reminders, setReminders, subjects }: Props) {
+export default function Reminders({ student, onLogout }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddingReminder, setIsAddingReminder] = useState(false);
   const [newReminder, setNewReminder] = useState({
     subjectId: '',
@@ -47,12 +49,77 @@ export default function Reminders({ student, onLogout, reminders, setReminders, 
   });
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchSubjectsAndReminders();
+  }, [student.id]);
+
+  const fetchSubjectsAndReminders = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch subjects
+      const { data: subjectsData, error: subjectsError } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('student_id', student.id);
+
+      if (subjectsError) {
+        toast({
+          title: "Error fetching subjects",
+          description: subjectsError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSubjects(subjectsData || []);
+
+      // Fetch reminders with subject names
+      const { data: remindersData, error: remindersError } = await supabase
+        .from('reminders')
+        .select('*, subjects(name)')
+        .eq('student_id', student.id)
+        .order('due_date', { ascending: true });
+
+      if (remindersError) {
+        toast({
+          title: "Error fetching reminders",
+          description: remindersError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform data to match component interface
+      const transformedReminders = (remindersData || []).map(reminder => ({
+        id: reminder.id,
+        subjectId: reminder.subject_id,
+        subjectName: reminder.subjects?.name || 'Unknown Subject',
+        type: reminder.type as 'assignment' | 'submission' | 'exam',
+        title: reminder.title,
+        dueDate: reminder.due_date,
+        description: reminder.description
+      }));
+
+      setReminders(transformedReminders);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const addReminder = () => {
+  const addReminder = async () => {
     if (!newReminder.subjectId || !newReminder.title || !newReminder.dueDate) {
       toast({
         title: "Missing information",
@@ -62,30 +129,60 @@ export default function Reminders({ student, onLogout, reminders, setReminders, 
       return;
     }
 
-    const selectedSubject = subjects.find(s => s.id === newReminder.subjectId);
-    const reminder: Reminder = {
-      id: Date.now().toString(),
-      subjectId: newReminder.subjectId,
-      subjectName: selectedSubject?.name || 'Unknown Subject',
-      type: newReminder.type,
-      title: newReminder.title,
-      dueDate: newReminder.dueDate,
-      description: newReminder.description,
-    };
+    try {
+      const { data, error } = await supabase
+        .from('reminders')
+        .insert({
+          subject_id: newReminder.subjectId,
+          student_id: student.id,
+          type: newReminder.type,
+          title: newReminder.title,
+          due_date: newReminder.dueDate,
+          description: newReminder.description
+        })
+        .select('*, subjects(name)')
+        .single();
 
-    setReminders([...reminders, reminder]);
-    setNewReminder({
-      subjectId: '',
-      type: 'assignment',
-      title: '',
-      dueDate: '',
-      description: ''
-    });
-    setIsAddingReminder(false);
-    toast({
-      title: "Reminder added",
-      description: `${newReminder.title} has been added to your reminders.`,
-    });
+      if (error) {
+        toast({
+          title: "Error adding reminder",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform and add to local state
+      const newReminderObj: Reminder = {
+        id: data.id,
+        subjectId: data.subject_id,
+        subjectName: data.subjects?.name || 'Unknown Subject',
+        type: data.type as 'assignment' | 'submission' | 'exam',
+        title: data.title,
+        dueDate: data.due_date,
+        description: data.description
+      };
+
+      setReminders([...reminders, newReminderObj]);
+      setNewReminder({
+        subjectId: '',
+        type: 'assignment',
+        title: '',
+        dueDate: '',
+        description: ''
+      });
+      setIsAddingReminder(false);
+      toast({
+        title: "Reminder added",
+        description: `${newReminder.title} has been added to your reminders.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add reminder",
+        variant: "destructive",
+      });
+    }
   };
 
   const getCountdown = (dueDate: string) => {
@@ -246,8 +343,12 @@ export default function Reminders({ student, onLogout, reminders, setReminders, 
               </Dialog>
             </div>
           </CardHeader>
-          <CardContent>
-            {reminders.length === 0 ? (
+           <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading reminders...</p>
+              </div>
+            ) : reminders.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No reminders set. Click "Add Reminder" to get started!</p>

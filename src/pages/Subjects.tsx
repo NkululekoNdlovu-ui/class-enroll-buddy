@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Subject {
   id: string;
@@ -33,20 +34,21 @@ interface TermDetail {
 
 interface Props {
   student: {
-    name: string;
-    surname: string;
+    id: string;
+    first_name: string;
+    last_name: string;
     email: string;
     course: string;
-    yearLevel: string;
+    year_level: string;
   };
   onLogout: () => void;
-  subjects: Subject[];
-  setSubjects: React.Dispatch<React.SetStateAction<Subject[]>>;
 }
 
-export default function Subjects({ student, onLogout, subjects, setSubjects }: Props) {
+export default function Subjects({ student, onLogout }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [termDetails, setTermDetails] = useState<TermDetail>({
     test: 0,
@@ -60,7 +62,42 @@ export default function Subjects({ student, onLogout, subjects, setSubjects }: P
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<'term1' | 'term2' | 'term3' | 'term4'>('term1');
 
-  const addSubject = () => {
+  // Fetch subjects on component mount
+  useEffect(() => {
+    fetchSubjects();
+  }, [student.id]);
+
+  const fetchSubjects = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('student_id', student.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        toast({
+          title: "Error fetching subjects",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSubjects(data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch subjects",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addSubject = async () => {
     if (subjects.length >= 10) {
       toast({
         title: "Maximum subjects reached",
@@ -79,26 +116,47 @@ export default function Subjects({ student, onLogout, subjects, setSubjects }: P
       return;
     }
 
-    const subject: Subject = {
-      id: Date.now().toString(),
-      name: newSubject.name,
-      description: newSubject.description,
-      term1: 0,
-      term2: 0,
-      term3: 0,
-      term4: 0,
-    };
+    try {
+      const { data, error } = await supabase
+        .from('subjects')
+        .insert({
+          name: newSubject.name,
+          description: newSubject.description,
+          student_id: student.id,
+          term1: 0,
+          term2: 0,
+          term3: 0,
+          term4: 0
+        })
+        .select()
+        .single();
 
-    setSubjects([...subjects, subject]);
-    setNewSubject({ name: "", description: "" });
-    setIsAddingSubject(false);
-    toast({
-      title: "Subject added",
-      description: `${newSubject.name} has been added to your subjects.`,
-    });
+      if (error) {
+        toast({
+          title: "Error adding subject",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSubjects([...subjects, data]);
+      setNewSubject({ name: "", description: "" });
+      setIsAddingSubject(false);
+      toast({
+        title: "Subject added",
+        description: `${newSubject.name} has been added to your subjects.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add subject",
+        variant: "destructive",
+      });
+    }
   };
 
-  const calculateTermPercentage = () => {
+  const calculateTermPercentage = async () => {
     const { test, assignment, exam, testWeight, assignmentWeight, examWeight } = termDetails;
     
     if (testWeight + assignmentWeight + examWeight !== 100) {
@@ -113,17 +171,40 @@ export default function Subjects({ student, onLogout, subjects, setSubjects }: P
     const percentage = (test * testWeight + assignment * assignmentWeight + exam * examWeight) / 100;
     
     if (selectedSubject) {
-      const updatedSubjects = subjects.map(subject => 
-        subject.id === selectedSubject.id 
-          ? { ...subject, [selectedTerm]: percentage }
-          : subject
-      );
-      setSubjects(updatedSubjects);
-      setSelectedSubject(null);
-      toast({
-        title: "Term percentage calculated",
-        description: `${selectedTerm.toUpperCase()} percentage: ${percentage.toFixed(2)}%`,
-      });
+      try {
+        const { error } = await supabase
+          .from('subjects')
+          .update({ [selectedTerm]: percentage })
+          .eq('id', selectedSubject.id)
+          .eq('student_id', student.id); // Additional security check
+
+        if (error) {
+          toast({
+            title: "Error updating percentage",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const updatedSubjects = subjects.map(subject => 
+          subject.id === selectedSubject.id 
+            ? { ...subject, [selectedTerm]: percentage }
+            : subject
+        );
+        setSubjects(updatedSubjects);
+        setSelectedSubject(null);
+        toast({
+          title: "Term percentage calculated",
+          description: `${selectedTerm.toUpperCase()} percentage: ${percentage.toFixed(2)}%`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update percentage",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -257,7 +338,11 @@ export default function Subjects({ student, onLogout, subjects, setSubjects }: P
             </div>
           </CardHeader>
           <CardContent>
-            {subjects.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading subjects...</p>
+              </div>
+            ) : subjects.length === 0 ? (
               <div className="text-center py-8">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground">No subjects added yet. Click "Add Subject" to get started!</p>
