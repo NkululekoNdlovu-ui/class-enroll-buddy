@@ -10,6 +10,7 @@ import { Plus, BookOpen, LogOut, ArrowLeft, Calculator, User } from "lucide-reac
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface Subject {
   id: string;
@@ -137,6 +138,18 @@ export default function Subjects({ student, onLogout, subjects, setSubjects }: P
       assignmentWeight: 30,
       examWeight: 40,
     });
+  };
+
+  const getGradeColor = (percentage: number) => {
+    if (percentage < 50) return "hsl(var(--grade-poor))";
+    if (percentage <= 65) return "hsl(var(--grade-fair))";
+    return "hsl(var(--grade-good))";
+  };
+
+  const getGradeVariant = (percentage: number): "destructive" | "secondary" | "default" => {
+    if (percentage < 50) return "destructive";
+    if (percentage <= 65) return "secondary"; 
+    return "default";
   };
 
   return (
@@ -278,44 +291,44 @@ export default function Subjects({ student, onLogout, subjects, setSubjects }: P
                         </TableCell>
                         <TableCell className="max-w-xs truncate">{subject.description}</TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Badge
+                            variant={getGradeVariant(subject.term1)}
+                            className="cursor-pointer hover:opacity-80 transition-smooth"
                             onClick={() => openTermModal(subject, 'term1')}
-                            className="hover:bg-primary/10"
+                            style={{ backgroundColor: getGradeColor(subject.term1) }}
                           >
                             {subject.term1.toFixed(1)}%
-                          </Button>
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Badge
+                            variant={getGradeVariant(subject.term2)}
+                            className="cursor-pointer hover:opacity-80 transition-smooth"
                             onClick={() => openTermModal(subject, 'term2')}
-                            className="hover:bg-primary/10"
+                            style={{ backgroundColor: getGradeColor(subject.term2) }}
                           >
                             {subject.term2.toFixed(1)}%
-                          </Button>
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Badge
+                            variant={getGradeVariant(subject.term3)}
+                            className="cursor-pointer hover:opacity-80 transition-smooth"
                             onClick={() => openTermModal(subject, 'term3')}
-                            className="hover:bg-primary/10"
+                            style={{ backgroundColor: getGradeColor(subject.term3) }}
                           >
                             {subject.term3.toFixed(1)}%
-                          </Button>
+                          </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Badge
+                            variant={getGradeVariant(subject.term4)}
+                            className="cursor-pointer hover:opacity-80 transition-smooth"
                             onClick={() => openTermModal(subject, 'term4')}
-                            className="hover:bg-primary/10"
+                            style={{ backgroundColor: getGradeColor(subject.term4) }}
                           >
                             {subject.term4.toFixed(1)}%
-                          </Button>
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}

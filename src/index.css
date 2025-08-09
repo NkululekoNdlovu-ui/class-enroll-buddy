@@ -44,6 +44,11 @@ All colors MUST be HSL.
     --shadow-card: 0 4px 20px -4px hsl(214 84% 56% / 0.1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
+    /* Grade color coding */
+    --grade-poor: 0 84% 60%;        /* Red for < 50% */
+    --grade-fair: 25 95% 53%;       /* Orange for 50-65% */ 
+    --grade-good: 142 76% 36%;      /* Green for 66-100% */
+
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
