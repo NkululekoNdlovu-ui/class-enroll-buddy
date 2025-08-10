@@ -59,12 +59,13 @@ export default function Dashboard({ student, onLogout }: Props) {
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => navigate('/admin')}
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary"
-                  title="Admin Access"
+                  className="flex items-center gap-2 hover:bg-primary/10 border-primary/20 text-primary hover:text-primary"
+                  title="Admin Dashboard"
                 >
                   <User className="h-4 w-4" />
+                  Admin
                 </Button>
                 <Button
                   onClick={onLogout}

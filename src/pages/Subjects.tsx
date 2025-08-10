@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, BookOpen, LogOut, ArrowLeft, Calculator, User } from "lucide-react";
+import { Plus, BookOpen, LogOut, ArrowLeft, Calculator, User, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -233,6 +233,37 @@ export default function Subjects({ student, onLogout }: Props) {
     return "default";
   };
 
+  const deleteSubject = async (subjectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('id', subjectId)
+        .eq('student_id', student.id); // Additional security check
+
+      if (error) {
+        toast({
+          title: "Error deleting subject",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSubjects(subjects.filter(subject => subject.id !== subjectId));
+      toast({
+        title: "Subject deleted",
+        description: "Subject has been removed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete subject",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
       {/* Header */}
@@ -359,6 +390,7 @@ export default function Subjects({ student, onLogout }: Props) {
                       <TableHead className="text-center">Term 2 %</TableHead>
                       <TableHead className="text-center">Term 3 %</TableHead>
                       <TableHead className="text-center">Term 4 %</TableHead>
+                      <TableHead className="text-center">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -414,9 +446,19 @@ export default function Subjects({ student, onLogout }: Props) {
                           >
                             {subject.term4.toFixed(1)}%
                           </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                         </TableCell>
+                         <TableCell className="text-center">
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             onClick={() => deleteSubject(subject.id)}
+                             className="hover:bg-destructive/10 hover:text-destructive"
+                           >
+                             <Trash2 className="h-3 w-3" />
+                           </Button>
+                         </TableCell>
+                       </TableRow>
+                     ))}
                   </TableBody>
                 </Table>
               </div>

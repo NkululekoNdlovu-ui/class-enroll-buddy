@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, LogOut, ArrowLeft, Calendar, AlertCircle, BookOpen, User } from "lucide-react";
+import { Plus, Clock, LogOut, ArrowLeft, Calendar, AlertCircle, BookOpen, User, Trash2, ArrowUpDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,8 @@ export default function Reminders({ student, onLogout }: Props) {
     description: ''
   });
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [sortBy, setSortBy] = useState<'dueDate' | 'title' | 'type'>('dueDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Fetch data on component mount
   useEffect(() => {
@@ -201,9 +203,63 @@ export default function Reminders({ student, onLogout }: Props) {
     return { days, hours, minutes, overdue: false };
   };
 
-  const sortedReminders = reminders.sort((a, b) => 
-    new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-  );
+  const deleteReminder = async (reminderId: string) => {
+    try {
+      const { error } = await supabase
+        .from('reminders')
+        .delete()
+        .eq('id', reminderId)
+        .eq('student_id', student.id); // Additional security check
+
+      if (error) {
+        toast({
+          title: "Error deleting reminder",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setReminders(reminders.filter(reminder => reminder.id !== reminderId));
+      toast({
+        title: "Reminder deleted",
+        description: "Reminder has been removed successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete reminder",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSort = (field: 'dueDate' | 'title' | 'type') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedReminders = [...reminders].sort((a, b) => {
+    let compareValue = 0;
+    
+    switch (sortBy) {
+      case 'dueDate':
+        compareValue = new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        break;
+      case 'title':
+        compareValue = a.title.localeCompare(b.title);
+        break;
+      case 'type':
+        compareValue = a.type.localeCompare(b.type);
+        break;
+    }
+    
+    return sortOrder === 'asc' ? compareValue : -compareValue;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -261,13 +317,47 @@ export default function Reminders({ student, onLogout }: Props) {
                 <Clock className="h-5 w-5 text-primary" />
                 All Reminders ({reminders.length})
               </CardTitle>
-              <Dialog open={isAddingReminder} onOpenChange={setIsAddingReminder}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-primary hover:opacity-90 transition-smooth">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Reminder
+              <div className="flex items-center gap-2">
+                {/* Sort Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSort('dueDate')}
+                    className="flex items-center gap-1"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    Due Date
+                    {sortBy === 'dueDate' && <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                   </Button>
-                </DialogTrigger>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSort('title')}
+                    className="flex items-center gap-1"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    Title
+                    {sortBy === 'title' && <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSort('type')}
+                    className="flex items-center gap-1"
+                  >
+                    <ArrowUpDown className="h-3 w-3" />
+                    Type
+                    {sortBy === 'type' && <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                  </Button>
+                </div>
+                <Dialog open={isAddingReminder} onOpenChange={setIsAddingReminder}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-gradient-primary hover:opacity-90 transition-smooth">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Reminder
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Add New Reminder</DialogTitle>
@@ -340,7 +430,8 @@ export default function Reminders({ student, onLogout }: Props) {
                     </div>
                   </div>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
            <CardContent>
@@ -376,17 +467,27 @@ export default function Reminders({ student, onLogout }: Props) {
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        {countdown.overdue ? (
-                          <Badge variant="destructive" className="text-sm px-3 py-1">Overdue</Badge>
-                        ) : (
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-primary">
-                              {countdown.days}d {countdown.hours}h {countdown.minutes}m
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          {countdown.overdue ? (
+                            <Badge variant="destructive" className="text-sm px-3 py-1">Overdue</Badge>
+                          ) : (
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-primary">
+                                {countdown.days}d {countdown.hours}h {countdown.minutes}m
+                              </div>
+                              <div className="text-sm text-muted-foreground">remaining</div>
                             </div>
-                            <div className="text-sm text-muted-foreground">remaining</div>
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteReminder(reminder.id)}
+                          className="hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   );
