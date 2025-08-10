@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, BookOpen, Bell, GraduationCap } from "lucide-react";
+import { Users, BookOpen, Bell, GraduationCap, TrendingUp, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -145,39 +145,70 @@ export default function Admin() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage students, subjects, and reminders</p>
+          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Comprehensive overview of all active students and platform activity
+          </p>
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">Active Students</CardTitle>
+              <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{students.length}</div>
+              <div className="text-2xl font-bold text-blue-800 dark:text-blue-200">{students.length}</div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                Registered students
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">Total Subjects</CardTitle>
+              <BookOpen className="h-4 w-4 text-green-600 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{subjects.length}</div>
+              <div className="text-2xl font-bold text-green-800 dark:text-green-200">{subjects.length}</div>
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                Enrolled subjects
+              </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Reminders</CardTitle>
-              <Bell className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300">Active Reminders</CardTitle>
+              <Bell className="h-4 w-4 text-orange-600 dark:text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{reminders.length}</div>
+              <div className="text-2xl font-bold text-orange-800 dark:text-orange-200">{reminders.filter(r => new Date(r.due_date) > new Date()).length}</div>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                Upcoming deadlines
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300">Average Performance</CardTitle>
+              <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-800 dark:text-purple-200">
+                {subjects.length > 0 ? Math.round(subjects.reduce((acc, subject) => {
+                  const avg = (subject.term1 + subject.term2 + subject.term3 + subject.term4) / 4;
+                  return acc + avg;
+                }, 0) / subjects.length) : 0}%
+              </div>
+              <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                Overall grade average
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -224,7 +255,9 @@ export default function Admin() {
                             variant="destructive"
                             size="sm"
                             onClick={() => deleteStudent(student.id)}
+                            className="flex items-center gap-1"
                           >
+                            <Trash2 className="h-3 w-3" />
                             Delete
                           </Button>
                         </TableCell>

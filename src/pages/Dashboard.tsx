@@ -56,14 +56,25 @@ export default function Dashboard({ student, onLogout }: Props) {
                   Reminders
                 </Button>
               </nav>
-              <Button
-                onClick={onLogout}
-                variant="outline"
-                className="flex items-center gap-2 hover:bg-destructive/10 hover:text-destructive"
-              >
-                <LogOut className="h-4 w-4" />
-                Logout
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => navigate('/admin')}
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary"
+                  title="Admin Access"
+                >
+                  <User className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={onLogout}
+                  variant="outline"
+                  className="flex items-center gap-2 hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </div>
         </div>
